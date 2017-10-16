@@ -9,13 +9,14 @@ import logging
 class Write_comments:
     log = logging.getLogger("Write_comments")
     DATA_PATH = 'data/'
-    NUMBER_WORKERS = 500
+    NUMBER_WORKERS = 200
 
     def __init__(self, comments):
         self.comments = comments
         self.file_list = []
         self.threads = []
-        self.wrote = 0
+        self.lock = threading.Lock()
+        self.comments_wrote = 0
         self.directory = Write_comments.DATA_PATH + str(comments[0].subreddit) + '/'
         self.queue = queue.Queue()
 
@@ -25,7 +26,7 @@ class Write_comments:
 
     #Make the subreddit directory if it doesn't exist
     def make_dir(self):
-        logging.debug("Making and checking for directory")
+        Write_comments.log.debug("Making and checking for directory")
         if not os.path.exists( self.directory ):
             return os.makedirs( self.directory )
         return True
@@ -38,29 +39,30 @@ class Write_comments:
 
     #Make the threads and prep the queue
     def prep_queue(self):
-        logging.debug("Preparing the queue")
-        logging.debug("Starting threads")
+        Write_comments.log.debug("Preparing the queue")
+        Write_comments.log.debug("Starting threads")
         for i in range(Write_comments.NUMBER_WORKERS):
             t = threading.Thread(target=self.writer)
             t.start()
             self.threads.append(t)
-        logging.debug("{} Threads started".format(len(self.threads)))
-        logging.debug("Filling queue")
+        Write_comments.log.debug("{} Threads started".format(len(self.threads)))
+        Write_comments.log.debug("Filling queue")
         for comment in self.comments:
             self.queue.put(comment)
         return len(self.threads)
     
     #Clean up the queue. Stop workers and finish tasks
     def finish_queue(self):
-        logging.debug("Waiting until all jobs are finished ({} on {} threads)".format(self.queue.qsize(), len(self.threads)))
+        Write_comments.log.info("Waiting until all jobs are finished ({} on {} threads)".format(self.queue.qsize(), len(self.threads)))
         #Block until all tasks are done
         self.queue.join()
         #Stop all workers
-        logging.debug("Stopping and joining writers")
-        for i in range(NUMBER_WORKERS):
+        Write_comments.log.debug("Stopping and joining writers")
+        for i in range(Write_comments.NUMBER_WORKERS):
             self.queue.put(None)
         for t in self.threads:
             t.join()
+        Write_comments.log.info("{} comments written".format(self.comments_wrote))
         return;
 
     #Takes one comment from the queue, then checks if it exists. If it doesn't we send it to the write function
@@ -75,20 +77,35 @@ class Write_comments:
             if comment.id in self.file_list:
                 self.queue.task_done()
             else:
-                self.wrote(1)
+                self.increment_wrote()
                 self.write( out_file, comment )
                 self.queue.task_done()
 
-    #def wrote(self):
+
+    def increment_wrote(self, value=1):
+        Write_comments.log.debug("Waiting for a lock")
+        self.lock.acquire()
+        try:
+            Write_comments.log.debug("Acquired a lock")
+            self.comments_wrote += value
+        except RunTimeError:
+            Write_comments.log.warning("RunTimeError when incrementing comments_wrote {}")
+        finally:
+            Write_comments.log.debug("Releasing a lock")
+            self.lock.release()
 
 
     #Write one comment to the speicifed file
     def write( self, out_file, comment ):
-        fout = open( out_file, 'w' )
-        fout.write( str(comment.author) + '\n' +
-                    str(comment.parent_id) + '\n' +
-                    str(comment.created) + '\n' +
-                    str(comment.score) + '\n' +
-                    str(comment.body) )
-        fout.close()
-        return True
+        try:
+            fout = open( out_file, 'w' )
+            fout.write( str(comment.author) + '\n' +
+                        str(comment.parent_id) + '\n' +
+                        str(comment.created) + '\n' +
+                        str(comment.score) + '\n' +
+                        str(comment.body) )
+            fout.close()
+        except KeyboardInterrupt:
+            fout.close()
+            return False;
+        return True;
