@@ -53,7 +53,8 @@ class Write_comments:
     
     #Clean up the queue. Stop workers and finish tasks
     def finish_queue(self):
-        Write_comments.log.info("Waiting until all jobs are finished ({} on {} threads)".format(self.queue.qsize(), len(self.threads)))
+        Write_comments.log.info("Waiting until all jobs are finished ({} job on {} threads)".format(
+            self.queue.qsize(), len(self.threads)))
         #Block until all tasks are done
         self.queue.join()
         #Stop all workers
@@ -62,7 +63,7 @@ class Write_comments:
             self.queue.put(None)
         for t in self.threads:
             t.join()
-        Write_comments.log.info("{} comments written".format(self.comments_wrote))
+        Write_comments.log.info("Comments written: {}".format(self.comments_wrote))
         return;
 
     #Takes one comment from the queue, then checks if it exists. If it doesn't we send it to the write function

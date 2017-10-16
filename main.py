@@ -21,6 +21,8 @@ SUB_LIST = ["pics",
             "WTF",
             "TumblrInAction",
             "gaming",
+            "android",
+            "AskReddit",
             "worldnews"]
 
 

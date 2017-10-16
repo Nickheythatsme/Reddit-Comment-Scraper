@@ -64,6 +64,7 @@ class Scrape_comments:
             self.q.put(None)
         for t in self.threads:
             t.join();
+        Scrape_comments.log.info("Comments from {}: {}".format(self.sub_name, len(self.comments)))
         return len(self.comments)
 
 
@@ -92,7 +93,7 @@ class Scrape_comments:
                 comments.append(comment)
                 comment_queue.extend(comment.replies)
             self.add_comments( comments )
-            Scrape_comments.log.info("Number of comments from submission ID {}: {}".format(submission.fullname,len(comments)))
+            Scrape_comments.log.debug("Number of comments from submission ID {}: {}".format(submission.fullname,len(comments)))
             comments.clear()
             self.q.task_done()
         return comments
