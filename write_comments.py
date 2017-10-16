@@ -83,15 +83,12 @@ class Write_comments:
 
 
     def increment_wrote(self, value=1):
-        Write_comments.log.debug("Waiting for a lock")
         self.lock.acquire()
         try:
-            Write_comments.log.debug("Acquired a lock")
             self.comments_wrote += value
         except RunTimeError:
             Write_comments.log.warning("RunTimeError when incrementing comments_wrote {}")
         finally:
-            Write_comments.log.debug("Releasing a lock")
             self.lock.release()
 
 
@@ -101,6 +98,7 @@ class Write_comments:
             fout = open( out_file, 'w' )
             fout.write( str(comment.author) + '\n' +
                         str(comment.parent_id) + '\n' +
+                        str(comment.submission.id) + '\n' + 
                         str(comment.created) + '\n' +
                         str(comment.score) + '\n' +
                         str(comment.body) )

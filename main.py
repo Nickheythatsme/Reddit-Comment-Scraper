@@ -5,7 +5,23 @@ import random
 from write_comments import Write_comments
 from scrape_comments import Scrape_comments
 
-SUB_LIST = ["pics","funny","news","politics","theDonald","gifs","teenagers"]
+SUB_LIST = ["pics",
+            "funny",
+            "news",
+            "politics",
+            "theDonald",
+            "gifs",
+            "teenagers",
+            "dataisbeautiful",
+            "interestingasfuck",
+            "nottheonion",
+            "videos",
+            "todayilearned",
+            "LifeProTips",
+            "WTF",
+            "TumblrInAction",
+            "gaming",
+            "worldnews"]
 
 
 def cycle( sub_name ):
@@ -14,6 +30,7 @@ def cycle( sub_name ):
 
 
 def main():
+    random.seed(time.clock())
     random.shuffle(SUB_LIST)
     while True:
         for sub in SUB_LIST:

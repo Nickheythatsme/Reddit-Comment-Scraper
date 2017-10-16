@@ -3,14 +3,16 @@ import praw
 import logging
 import time
 import app_info 
+import threading
+import queue
 from praw.models import MoreComments
 
 
 class Scrape_comments:
     log = logging.getLogger("Scrape_comments")
-    SUBMISSION_LIMIT = 20
-    COMMENT_LIMIT = 25
+    SUBMISSION_LIMIT = 50
     TIMEOUT = 5*60
+    MAX_THREADS = 4
     Reddit = praw.Reddit(client_id=app_info.client_id,
                          client_secret=app_info.client_secret,
                          password=app_info.password,
@@ -21,9 +23,12 @@ class Scrape_comments:
         self.sub_name = sub_name
         self.comments = []
         self.submissions = []
+        self.threads = []
+        self.comment_lock = threading.Lock()
+        self.q = queue.Queue()
 
         self.get_subreddit()
-        self.get_submission_comments()
+        self.start_submission_download()
 
 
     #Try to pull data from the subreddit 
@@ -47,20 +52,50 @@ class Scrape_comments:
         return len(self.submissions)
 
 
-    #Get the comments from a submission. This recursively calls until there
-    #are no more submission objects in the self.submissions list.
+    def start_submission_download( self ):
+        for i in range(Scrape_comments.MAX_THREADS):
+            t = threading.Thread(target=self.get_submission_comments)
+            self.threads.append(t)
+            t.start()
+        for submission in self.submissions:
+            self.q.put(submission)
+        self.q.join()
+        for i in range(Scrape_comments.MAX_THREADS):
+            self.q.put(None)
+        for t in self.threads:
+            t.join();
+        return len(self.comments)
+
+
+    def add_comments(self, comments):
+        self.comment_lock.acquire()
+        try:
+            for comment in comments:
+                self.comments.append(comment)
+        except RunTimeError:
+            Scrape_comments.log.warning("RunTimeError when appending comments")
+        finally:
+            self.comment_lock.release()
+        return True;
+
+
     def get_submission_comments( self ):
-        if not self.submissions:
-            Scrape_comments.log.info("Pulled {} comments from {}".format(len(self.comments),self.sub_name))
-            return len(self.comments)
-        submission = self.submissions.pop(0)
-        submission.comments.replace_more(limit=0)
-        Scrape_comments.log.info("Pulling comments from submission ID: {}".format(submission.fullname))
-        comment_queue = submission.comments[:]
-        while comment_queue:
-            comment = comment_queue.pop(0)
-            self.comments.append(comment)
-        return self.get_submission_comments()
+        comments = []
+        while True:
+            submission = self.q.get()
+            if submission is None:
+                return True
+            submission.comments.replace_more(limit=0)
+            comment_queue = submission.comments[:]
+            while comment_queue:
+                comment = comment_queue.pop(0)
+                comments.append(comment)
+                comment_queue.extend(comment.replies)
+            self.add_comments( comments )
+            Scrape_comments.log.info("Number of comments from submission ID {}: {}".format(submission.fullname,len(comments)))
+            comments.clear()
+            self.q.task_done()
+        return comments
 
 
 if __name__=="__main__":
