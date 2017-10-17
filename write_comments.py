@@ -35,6 +35,7 @@ class Write_comments:
     def read_dir(self):
         self.make_dir()
         self.file_list = os.listdir(self.directory)
+        Write_comments.log.info("Files loaded from {}: {}".format(self.directory, len(self.file_list)))
         return len(self.file_list)
 
     #Make the threads and prep the queue
