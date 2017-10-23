@@ -12,7 +12,7 @@ class Scrape_comments:
     log = logging.getLogger("Scrape_comments")
     SUBMISSION_LIMIT = 50
     TIMEOUT = 5*60
-    MAX_THREADS = 4
+    MAX_THREADS = 2
     Reddit = praw.Reddit(client_id=app_info.client_id,
                          client_secret=app_info.client_secret,
                          password=app_info.password,

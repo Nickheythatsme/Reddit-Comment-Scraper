@@ -42,9 +42,6 @@ def main():
             time.sleep(60)
 
 if __name__ == "__main__":
-    logging.basicConfig(filename="scrape.log",level=logging.INFO)
-    main()
-
-else:
     logging.basicConfig(level=logging.INFO)
     main()
+

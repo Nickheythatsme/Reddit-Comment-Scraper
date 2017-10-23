@@ -9,7 +9,7 @@ import logging
 class Write_comments:
     log = logging.getLogger("Write_comments")
     DATA_PATH = 'data/'
-    NUMBER_WORKERS = 200
+    NUMBER_WORKERS = 4
 
     def __init__(self, comments):
         self.comments = comments
