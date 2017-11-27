@@ -98,12 +98,15 @@ class Write_comments:
     def write( self, out_file, comment ):
         try:
             fout = open( out_file, 'w' )
+            """
             fout.write( str(comment.author) + '\n' +
                         str(comment.parent_id) + '\n' +
                         str(comment.submission.id) + '\n' + 
                         str(comment.created) + '\n' +
                         str(comment.score) + '\n' +
                         str(comment.body) )
+            """
+            fout.write(comment.body)
             fout.close()
         except KeyboardInterrupt:
             fout.close()
