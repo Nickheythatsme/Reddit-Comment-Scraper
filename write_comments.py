@@ -9,7 +9,7 @@ import logging
 class Write_comments:
     log = logging.getLogger("Write_comments")
     DATA_PATH = 'data/'
-    NUMBER_WORKERS = 200
+    NUMBER_WORKERS = 4
 
     def __init__(self, comments):
         self.comments = comments
@@ -35,6 +35,7 @@ class Write_comments:
     def read_dir(self):
         self.make_dir()
         self.file_list = os.listdir(self.directory)
+        Write_comments.log.info("Files loaded from {}: {}".format(self.directory, len(self.file_list)))
         return len(self.file_list)
 
     #Make the threads and prep the queue
@@ -97,12 +98,15 @@ class Write_comments:
     def write( self, out_file, comment ):
         try:
             fout = open( out_file, 'w' )
+            """
             fout.write( str(comment.author) + '\n' +
                         str(comment.parent_id) + '\n' +
                         str(comment.submission.id) + '\n' + 
                         str(comment.created) + '\n' +
                         str(comment.score) + '\n' +
                         str(comment.body) )
+            """
+            fout.write(comment.body)
             fout.close()
         except KeyboardInterrupt:
             fout.close()
