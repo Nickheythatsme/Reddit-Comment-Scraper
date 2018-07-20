@@ -1,23 +1,33 @@
+import os
 import sys
 import praw
 import logging
 import time
-import app_info 
 import threading
 import queue
 from praw.models import MoreComments
 
+def init_reddit():
+# get the app info from system environment variables
+    try:
+        pclient_id=os.environ['client_id']
+        pclient_secret=os.environ['client_secret']
+        puser_agent=os.environ['user_agent']
+    except KeyError as err:
+        logging.error("Error: {} was not found in system environment variables".format(err))
+        sys.exit(1)
+    return praw.Reddit(client_id=pclient_id,
+                         client_secret=pclient_secret,
+                         user_agent=puser_agent)
 
 class Scrape_comments:
-    log = logging.getLogger("Scrape_comments")
+    log = logging.getLogger("scrape_comments")
     SUBMISSION_LIMIT = 50
     TIMEOUT = 5*60
     MAX_THREADS = 2
-    Reddit = praw.Reddit(client_id=app_info.client_id,
-                         client_secret=app_info.client_secret,
-                         password=app_info.password,
-                         user_agent=app_info.user_agent,
-                         username=app_info.username)
+    Reddit = init_reddit()
+
+
 
     def __init__(self, sub_name):
         self.sub_name = sub_name
@@ -48,7 +58,7 @@ class Scrape_comments:
             e = sys.exc_info()[0]
             Scrape_comments.log.critial("Getting submission failed: unknown exception: {}".format(e))
             return None
-        Scrape_comments.log.info("Pulled links from {}".format(self.sub_name))
+        Scrape_comments.log.info("Pulled {} post links from {}".format(len(self.submissions),self.sub_name))
         return len(self.submissions)
 
 
